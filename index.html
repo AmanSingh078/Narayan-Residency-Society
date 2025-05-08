@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Narayan Residency – Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #7d8c9c, #577498);
+      color: #111827;
+    }
+
+    header {
+      height: 450px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Using a single GIF background */
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url('image/a8a28e52501449.59148d3b43dca.gif') no-repeat center center/cover; /* Use your GIF here */
+      z-index: -1;
+      filter: brightness(0.6);
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
+    }
+
+    header p {
+      font-size: 1.3rem;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 40px;
+      color: #1e3a8a;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 25px;
+    }
+
+    .block-card {
+      background: rgb(234, 243, 238);
+      border-radius: 16px;
+      padding: 30px 0;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+
+    .block-card:hover {
+      transform: scale(1.05);
+      background: #629d7d;
+      color: #1e40af;
+    }
+
+    footer {
+      background: #1e3a8a;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 60px;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 2.2rem; }
+      header p { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Narayan Residency Society</h1>
+    <p>Welcome! Select your block to check maintenance details</p>
+  </header>
+
+  <main>
+    <h2>Choose Your Block</h2>
+    <div class="grid">
+      <a class="block-card" href="a-block.html">Block A</a>
+      <a class="block-card" href="b-block.html">Block B</a>
+      <a class="block-card" href="c-block.html">Block C</a>
+      <a class="block-card" href="d-block.html">Block D</a>
+      <a class="block-card" href="e-block.html">Block E</a>
+      <a class="block-card" href="f-block.html">Block F</a>
+      <a class="block-card" href="g-block.html">Block G</a>
+      <a class="block-card" href="h-block.html">Block H</a>
+      <a class="block-card" href="i-block.html">Block I</a>
+      <a class="block-card" href="j-block.html">Block J</a>
+      <a class="block-card" href="k-block.html">Block K</a>
+      <a class="block-card" href="l-block.html">Block L</a>
+      <a class="block-card" href="m-block.html">Block M</a>
+      <a class="block-card" href="n-block.html">Block N</a>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Narayan Residency | Designed with Aman ✨
+  </footer>
+
+</body>
+</html>
