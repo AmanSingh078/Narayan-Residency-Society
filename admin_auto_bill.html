@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel - Block Maintenance</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <style>
+    body { background-color: #f5f5f5; font-family: Arial, sans-serif; }
+    .container { margin-top: 20px; }
+    h2 { color: #333; margin-bottom: 20px; }
+    .table { background-color: #fff; }
+    .table th { background-color: #343a40; color: #fff; text-align: center; }
+    .table td, .table th { vertical-align: middle; text-align: center; }
+    .form-group input { margin-bottom: 10px; }
+    #spinner { display: none; text-align: center; }
+    .alert-fixed { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 250px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="text-center">Admin Panel - Block Maintenance</h2>
+
+    <div class="form-inline mb-3">
+      <select id="block-selector" class="form-control mr-2">
+        <option value="a">Block A</option>
+        <option value="b">Block B</option>
+        <option value="c">Block C</option>
+        <option value="d">Block D</option>
+        <option value="e">Block E</option>
+        <option value="f">Block F</option>
+        <option value="g">Block G</option>
+        <option value="h">Block H</option>
+        <option value="i">Block I</option>
+        <option value="j" selected>Block J</option>
+        <option value="k">Block K</option>
+        <option value="l">Block L</option>
+        <option value="m">Block M</option>
+        <option value="n">Block N</option>
+      </select>
+
+      <select id="year-selector" class="form-control mr-2"></select>
+
+      <select id="month-selector" class="form-control mr-2">
+        <option value="jan-feb">Jan-Feb</option>
+        <option value="mar-apr">Mar-Apr</option>
+        <option value="may-jun">May-Jun</option>
+        <option value="jul-aug">Jul-Aug</option>
+        <option value="sep-oct">Sep-Oct</option>
+        <option value="nov-dec">Nov-Dec</option>
+      </select>
+
+      <input type="text" id="search-bar" class="form-control mr-2" placeholder="Search by flat" />
+      <button onclick="filterTable()" class="btn btn-primary">Search</button>
+    </div>
+
+    <form id="add-form" class="form-inline mb-3">
+      <input type="text" id="new-flat" class="form-control mr-2" placeholder="Flat" required />
+      <input type="number" id="new-prev" class="form-control mr-2" placeholder="Prev" required />
+      <input type="number" id="new-curr" class="form-control mr-2" placeholder="Curr" required />
+      <input type="number" id="new-units" class="form-control mr-2" placeholder="Units" required />
+      <input type="number" id="new-bill" class="form-control mr-2" placeholder="Bill" required />
+      <input type="number" id="new-maintenance" class="form-control mr-2" placeholder="Maint." required />
+      <input type="number" id="new-extra" class="form-control mr-2" placeholder="Extra" required />
+      <input type="number" id="new-due" class="form-control mr-2" placeholder="Due" required />
+      <input type="number" id="new-total" class="form-control mr-2" placeholder="Total" required />
+      <input type="number" id="new-received" class="form-control mr-2" placeholder="Received" required />
+      <button type="submit" class="btn btn-success">Add Row</button>
+    </form>
+
+    <div id="spinner">
+      <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+
+    <div id="table-container"></div>
+    <div id="alert-container"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB5IlLZCcUnwsWQ6R360tMIR3pcMO3Cx1A",
+      authDomain: "vital-92722.firebaseapp.com",
+      databaseURL: "https://vital-92722-default-rtdb.firebaseio.com",
+      projectId: "vital-92722",
+      storageBucket: "vital-92722.appspot.com",
+      messagingSenderId: "141384962985",
+      appId: "1:141384962985:web:e18a741ef33058a75c6ab8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let allData = [];
+    let currentBlock;
+    let currentMonth;
+    let currentYear;
+
+    function populateYears(startYear = 2022) {
+      const yearSelector = document.getElementById("year-selector");
+      const now = new Date().getFullYear();
+      for (let year = now; year >= startYear; year--) {
+        const option = document.createElement("option");
+        option.value = year.toString();
+        option.text = year.toString();
+        yearSelector.appendChild(option);
+      }
+      yearSelector.value = now.toString();
+    }
+
+    populateYears();
+    currentBlock = document.getElementById("block-selector").value;
+    currentMonth = document.getElementById("month-selector").value;
+    currentYear = document.getElementById("year-selector").value;
+    loadData();
+
+    document.getElementById("block-selector").addEventListener("change", function () {
+      currentBlock = this.value;
+      loadData();
+    });
+
+    document.getElementById("month-selector").addEventListener("change", function () {
+      currentMonth = this.value;
+      loadData();
+    });
+
+    document.getElementById("year-selector").addEventListener("change", function () {
+      currentYear = this.value;
+      loadData();
+    });
+
+    function showLoadingIndicator(show) {
+      document.getElementById("spinner").style.display = show ? "block" : "none";
+      document.getElementById("table-container").style.display = show ? "none" : "block";
+    }
+
+    function showAlert(message, type = 'success') {
+      const alertDiv = document.createElement("div");
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show alert-fixed`;
+      alertDiv.innerHTML = `${message}<button type="button" class="close" data-dismiss="alert">&times;</button>`;
+      document.getElementById("alert-container").appendChild(alertDiv);
+      setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    function loadData() {
+      showLoadingIndicator(true);
+      db.ref(`${currentBlock}_block_data/${currentYear}/${currentMonth}`).once("value", function (snapshot) {
+        allData = [];
+        if (snapshot.exists()) {
+          snapshot.forEach(child => {
+            allData.push({ id: child.key, ...child.val() });
+          });
+        }
+        renderTable(allData);
+        showLoadingIndicator(false);
+      });
+    }
+
+    function renderTable(data) {
+      if (data.length === 0) {
+        document.getElementById("table-container").innerHTML = `<div class="alert alert-info text-center">No records found.</div>`;
+        return;
+      }
+
+      data.sort((a, b) => a.flat.localeCompare(b.flat));
+      let html = `<table class="table table-bordered table-hover"><thead><tr>
+        <th>Flat</th><th>Prev</th><th>Curr</th><th>Units</th>
+        <th>Bill</th><th>Maint.</th><th>Extra</th><th>Due</th>
+        <th>Total</th><th>Received</th><th>Month</th><th>Action</th>
+      </tr></thead><tbody>`;
+
+      data.forEach((row, i) => {
+        html += `<tr>
+          <td>${row.flat}</td>
+          <td><input type="number" value="${row.prev}" id="prev-${i}" /></td>
+          <td><input type="number" value="${row.curr}" id="curr-${i}" /></td>
+          <td><input type="number" value="${row.units}" id="units-${i}" /></td>
+          <td><input type="number" value="${row.bill}" id="bill-${i}" /></td>
+          <td><input type="number" value="${row.maintenance}" id="maint-${i}" /></td>
+          <td><input type="number" value="${row.extra}" id="extra-${i}" /></td>
+          <td><input type="number" value="${row.due}" id="due-${i}" /></td>
+          <td><input type="number" value="${row.total}" id="total-${i}" /></td>
+          <td><input type="number" value="${row.received}" id="rec-${i}" /></td>
+          <td>${currentMonth}</td>
+          <td><button class="btn btn-primary btn-sm" onclick="updateRow(${i})">Update</button></td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      document.getElementById("table-container").innerHTML = html;
+    }
+
+    function updateRow(i) {
+      const updated = {
+        flat: allData[i].flat,
+        prev: document.getElementById(`prev-${i}`).value,
+        curr: document.getElementById(`curr-${i}`).value,
+        units: document.getElementById(`units-${i}`).value,
+        bill: document.getElementById(`bill-${i}`).value,
+        maintenance: document.getElementById(`maint-${i}`).value,
+        extra: document.getElementById(`extra-${i}`).value,
+        due: document.getElementById(`due-${i}`).value,
+        total: document.getElementById(`total-${i}`).value,
+        received: document.getElementById(`rec-${i}`).value
+      };
+      db.ref(`${currentBlock}_block_data/${currentYear}/${currentMonth}/${allData[i].id}`).update(updated, () => {
+        showAlert("Row updated!");
+        loadData();
+      });
+    }
+
+    
+// Auto-calculate bill when units are entered
+document.getElementById("new-units").addEventListener("input", function () {
+  const units = parseFloat(this.value);
+  const billField = document.getElementById("new-bill");
+  if (!isNaN(units)) {
+    billField.value = (units * 13).toFixed(2);
+  } else {
+    billField.value = "";
+  }
+});
+
+
+document.getElementById("add-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      showLoadingIndicator(true);
+      const newData = {
+        flat: document.getElementById("new-flat").value.trim(),
+        prev: document.getElementById("new-prev").value,
+        curr: document.getElementById("new-curr").value,
+        units: document.getElementById("new-units").value,
+        bill: document.getElementById("new-bill").value,
+        maintenance: document.getElementById("new-maintenance").value,
+        extra: document.getElementById("new-extra").value,
+        due: document.getElementById("new-due").value,
+        total: document.getElementById("new-total").value,
+        received: document.getElementById("new-received").value
+      };
+
+      db.ref(`${currentBlock}_block_data/${currentYear}/${currentMonth}`).push(newData, () => {
+        document.getElementById("add-form").reset();
+        showAlert("New row added!");
+        loadData();
+      });
+    });
+
+    function filterTable() {
+      const q = document.getElementById("search-bar").value.toLowerCase();
+      const filtered = allData.filter(r => r.flat.toLowerCase().includes(q));
+      renderTable(filtered);
+    }
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
